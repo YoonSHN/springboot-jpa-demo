@@ -32,12 +32,12 @@ public class DonationController {
                     "status", 200,
                     "message", "기증 후 스토리 목록 가져오기 성공",
                     "data", lists));
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (RuntimeException re) {
+            re.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                     "status", 500,
                     "message", "기증 후 스토리 목록 가져오기 실패",
-                    "error", e.getMessage()
+                    "error", re.getMessage()
             ));
         }
     }
