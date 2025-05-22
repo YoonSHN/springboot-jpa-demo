@@ -17,6 +17,5 @@ import java.util.List;
 @AllArgsConstructor
 public class DonationStoryWriteFormDto {
 
-    private List<String> areaOptions; //권역
-    private String captchaImageUrl;
+    private List<String> areaOptions; //db에 저장된 권역 정보
 }

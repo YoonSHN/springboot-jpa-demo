@@ -30,6 +30,7 @@ public class DonationStoryComment {
     private DonationStory story;
 
     private String commentWriter;
+
     private String commentPassword;
 
     private String contents;

@@ -3,7 +3,7 @@ package koda.service;
 import koda.dto.response.DonationStoryListDto;
 import koda.dto.response.DonationStoryWriteFormDto;
 import koda.entity.DonationStory;
-import koda.repository.AfterDonationRepository;
+import koda.repository.DonationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 public class DonationServiceTest {
 
     @Mock
-    private AfterDonationRepository repository;
+    private DonationRepository repository;
 
     @InjectMocks
     private DonationService service;
@@ -55,19 +55,19 @@ public class DonationServiceTest {
 
     }
 
+
+
     @Test
     public void loadDonationStoryFormData() { //권역, captcha 검증
         //given
         DonationStoryWriteFormDto dto = service.loadDonationStoryFormData();
 
         assertEquals("1권역(수도권, 강원, 제주)", dto.getAreaOptions().get(0));
-        assertEquals("", dto.getCaptchaImageUrl());
         assertTrue(dto.getAreaOptions().get(0).contains("1권역"));
         assertEquals(3, dto.getAreaOptions().size());
         assertIterableEquals(List.of("1권역(수도권, 강원, 제주)", "2권역(충청, 전라)", "3권역(영남)"),
                 dto.getAreaOptions());
 
-        assertNotNull(dto.getCaptchaImageUrl());
 
     }
 

@@ -6,8 +6,8 @@ import koda.dto.request.DonationStoryCommentModifyRequestDto;
 import koda.dto.request.VerifyCommentPasswordDto;
 import koda.entity.DonationStory;
 import koda.entity.DonationStoryComment;
-import koda.repository.AfterDonationRepository;
 import koda.repository.DonationCommentRepository;
+import koda.repository.DonationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +19,8 @@ import java.util.Optional;
 public class DonationCommentService {
 
     private final DonationCommentRepository commentRepository;
-    private final AfterDonationRepository storyRepository;
+    private final DonationRepository storyRepository;
+
     @Transactional
     public void createDonationStoryComment(Long storySeq, CommentCreateRequestDto requestDto) {
         DonationStory story = storyRepository.findById(storySeq)

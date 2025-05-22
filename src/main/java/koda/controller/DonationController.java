@@ -7,6 +7,7 @@ import koda.dto.response.DonationStoryListDto;
 import koda.service.DonationCommentService;
 import koda.service.DonationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping()
 public class DonationController {
 
     private final DonationService donationService;
@@ -45,7 +47,7 @@ public class DonationController {
         return ResponseEntity.ok(donationService.loadDonationStoryFormData());
     }
 
-    @PostMapping(value = "/donationLetters", consumes = "multipart/form-data")
+    @PostMapping(value = "/donationLetters", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createStory(@ModelAttribute DonationStoryCreateRequestDto dto, HttpSession session) throws Exception {
         try {
             donationService.createDonationStory(dto, session);

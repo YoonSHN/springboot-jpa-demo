@@ -11,10 +11,10 @@ public class DonationStoryCreateRequestDto {
     private String areaCode;
     private String storyTitle;
 
-    private String storyPassword;
+    private String storyPasscode;
     private String storyWriter;
     private String storyContents;
 
-    private String captchaInput; //캡차 번호
+    private String captchaToken; // hCaptcha가 전달한 캡차 인증 값
     private MultipartFile file;
 }

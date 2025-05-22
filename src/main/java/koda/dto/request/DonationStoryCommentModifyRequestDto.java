@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class DonationStoryCommentModifyRequestDto {
+
+
     private String commentWriter;
     private String commentPassword;
     private String commentContents;
