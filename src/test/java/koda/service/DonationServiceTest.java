@@ -13,6 +13,7 @@ import koda.entity.DonationStory;
 import koda.repository.DonationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,12 +22,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 public class DonationServiceTest {
@@ -74,32 +81,31 @@ public class DonationServiceTest {
         assertIterableEquals(List.of(AreaCode.AREA100, AreaCode.AREA200, AreaCode.AREA300),
                 dto.getAreaOptions());
 
-    }private AreaCode areaCode;
-    @NotBlank
-    private String storyTitle;
-
-    @NotBlank
-    @Min(8)
-    private String storyPasscode;
-    @NotBlank
-    private String storyWriter;
-    private String storyContents;
-
-    @NotNull
-    private String captchaToken; // hCaptcha가 전달한 캡차 인증 값
-    private MultipartFile file;
+    }
 
     @Test
-    public void createDonationStory() { //폼데이터가 잘 전달이 되는가?, repository에 잘 save되었는가?
+    public void createDonationStory() throws IOException { //폼데이터가 잘 전달이 되는가?, repository에 잘 save되었는가?
         MockMultipartFile file = new MockMultipartFile(
                 "file",
-                "test.txt",
-                "text/plain",
+                "test.png",
+                "image/png",
                 "hello world".getBytes()
         );
         DonationStoryCreateRequestDto requestDto = new DonationStoryCreateRequestDto(AreaCode.AREA100,"제목1",
-                "1234a","작가1" ,"안녕하세요","dqwokdpqdokq",file);
+                "wdqw","작가1" ,"안녕하세요","dqwokdpqdokq",file);
 
+        Path uploadPath = Paths.get("target/test-uploads");
+        Files.createDirectories(uploadPath);
+        service.createDonationStory(requestDto);
+
+        ArgumentCaptor<DonationStory> captor = ArgumentCaptor.forClass(DonationStory.class);
+        verify(repository, times(1)).save(captor.capture());
+
+        DonationStory saved = captor.getValue();
+
+        assertEquals(requestDto.getAreaCode(), saved.getAreaCode());
+        assertEquals(requestDto.getStoryContents(), "안녕하세요");
+        assertEquals(requestDto.getStoryPasscode(),saved.getStoryPasscode());
 
     }
 

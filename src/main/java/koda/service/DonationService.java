@@ -1,7 +1,6 @@
 package koda.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 import koda.dto.request.*;
 import koda.dto.response.AreaCode;
@@ -21,7 +20,6 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -71,6 +69,10 @@ public class DonationService {
         if(requestDto.getStoryPasscode() == null || requestDto.getStoryPasscode().isBlank()){
             throw new IllegalArgumentException("비밀번호는 필수 입력값입니다.");
         }
+        if(!validatePassword(requestDto.getStoryPasscode())){
+            throw new RuntimeException("패스워드가 틀립니다.");
+        }
+
 
         //캡차 검증 코드 추가해야 함.
         String storedFileName = null;
@@ -88,7 +90,7 @@ public class DonationService {
                     originalFileName = requestDto.getFile().getOriginalFilename();
                     storedFileName = UUID.randomUUID().toString().replace("-", "").toUpperCase();
 
-                    Path savePath = Paths.get("/uploads",storedFileName); //파일 주소 얻기(일단 임시 주소)
+                    Path savePath = Paths.get("target/test-uploads",storedFileName); //파일 주소 얻기(일단 임시 주소)
                     Files.copy(requestDto.getFile().getInputStream(), savePath); //파일 저장
                 } catch (IOException e) {
                     throw new RuntimeException("파일 업로드 실패", e);
@@ -168,7 +170,7 @@ public class DonationService {
 
     //비밀번호 검증 (영 + 숫자 + 8자 ~ 16자 코드) - story, comment 모두 처리
     public boolean validatePassword(String password){
-        if(password.matches("^[a-zA-Z0-9{8,16]$")){
+        if(password.matches("^[a-zA-Z0-9]{8,16}$")){
             return true;
         }
         return false;
