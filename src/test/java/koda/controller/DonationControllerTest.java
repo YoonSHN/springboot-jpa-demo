@@ -1,6 +1,8 @@
 package koda.controller;
 
+import koda.dto.response.AreaCode;
 import koda.dto.response.DonationStoryListDto;
+import koda.dto.response.DonationStoryWriteFormDto;
 import koda.service.DonationCommentService;
 import koda.service.DonationService;
 import org.junit.jupiter.api.Test;
@@ -57,13 +59,20 @@ public class DonationControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.message").value("기증 후 스토리 목록 가져오기 실패"))
-                        .andExpect(jsonPath("$.error").value(""));
+                .andExpect(jsonPath("$.error").value(""));
 
         System.out.println("donationSerivce = " + donationService);
     }
 
     @Test
-    public void getDonationWriteForm() {
+    public void getDonationWriteForm() throws Exception {
+        DonationStoryWriteFormDto writeFormDto = new DonationStoryWriteFormDto(List.of(AreaCode.AREA100, AreaCode.AREA200));
+
+        given(donationService.loadDonationStoryFormData()).willReturn(writeFormDto);
+
+        mockMvc.perform(get("/donationLetters/new")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
     }
 
     @Test

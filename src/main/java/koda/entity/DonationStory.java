@@ -3,6 +3,7 @@ package koda.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import koda.dto.request.DonationStoryModifyRequestDto;
+import koda.dto.response.AreaCode;
 import lombok.*;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -25,7 +26,8 @@ public class DonationStory {
     private Long storySeq;
 
     @Column(name="area_code", length = 10)
-    private String areaCode;
+    @Enumerated(EnumType.STRING) //AREA100,200,300
+    private AreaCode areaCode;
     @Column(name="story_title", length = 600)
     private String storyTitle;
 
