@@ -3,7 +3,6 @@ package koda.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import koda.dto.request.DonationStoryCommentModifyRequestDto;
-import koda.dto.request.DonationStoryModifyRequestDto;
 import lombok.*;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -23,29 +22,40 @@ public class DonationStoryComment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long commentSeq;
 
+    @Column(name="comment_writer", length = 150)
+    private String commentWriter;
+
+    @Column(name="comment_passcode", length = 60)
+    private String commentPasscode;
+
+    @Column(columnDefinition="TEXT")
+    private String contents;
+    @Column(name="write_time", nullable = false, updatable= false)
+    private LocalDateTime writeTime;
+    @Column(name="writer_id",length = 60)
+    private String writerId;
+
+    @Column(name="modify_time", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            insertable = false, updatable = false)
+    private LocalDateTime modifyTime;
+    @Column(name="modifier_id", length = 60)
+    private String modifierId;
+    @Column(name="del_flag", length = 1, nullable = false)
+    private String delFlag;
+
     @ManyToOne
     @JoinColumn(name = "story_seq")
     @JsonIgnore
     @ToString.Exclude
     private DonationStory story;
 
-    private String commentWriter;
-
-    private String commentPassword;
-
-    private String contents;
-    private LocalDateTime writeTime;
-    private String writerId;
-
-    @LastModifiedDate
-    private LocalDateTime modifyTime;
-
-    private String modifierId;
-    private String delFlag;
+    public void setStory(DonationStory story){ //연관관계 편의 메서드에서 호출
+        this.story = story;
+    }
 
     public void modifyDonationStoryComment(DonationStoryCommentModifyRequestDto requestDto) {
         this.commentWriter = requestDto.getCommentWriter();
-        this.commentPassword = requestDto.getCommentPassword();
+        this.commentPasscode = requestDto.getCommentPassword();
         this.contents = requestDto.getCommentContents();
     }
 
