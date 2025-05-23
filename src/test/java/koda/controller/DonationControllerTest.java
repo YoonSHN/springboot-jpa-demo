@@ -50,13 +50,14 @@ public class DonationControllerTest {
     public void getAllDonationList_failure() throws Exception{
         DonationStoryListDto dto1 = new DonationStoryListDto(1L, "제목1", "글쓴이1", 0, LocalDateTime.now());
         List<DonationStoryListDto> listDto = List.of(dto1);
-        given(donationService.findAllDonationStories()).willThrow(new RuntimeException("ㅎㅇ"));
+        given(donationService.findAllDonationStories()).willThrow(new RuntimeException(""));
 
         mockMvc.perform(get("/donationLetters")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.message").value("ㅎㅇ"));
+                .andExpect(jsonPath("$.message").value("기증 후 스토리 목록 가져오기 실패"))
+                        .andExpect(jsonPath("$.error").value(""));
 
         System.out.println("donationSerivce = " + donationService);
     }

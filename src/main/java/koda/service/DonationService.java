@@ -9,7 +9,6 @@ import koda.dto.response.DonationStoryDetailDto;
 import koda.dto.response.DonationStoryWriteFormDto;
 import koda.entity.DonationStory;
 import koda.repository.DonationRepository;
-import koda.repository.DonationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -95,7 +94,7 @@ public class DonationService {
 
         DonationStory story = DonationStory.builder()
                 .areaCode(requestDto.getAreaCode())
-                .storyPassword(requestDto.getStoryPasscode())
+                .storyPasscode(requestDto.getStoryPasscode())
                 .storyWriter(requestDto.getStoryWriter())
                 .anonymityFlag(null)
                 .readCount(0)
@@ -134,7 +133,7 @@ public class DonationService {
         if(storySeq.equals(verifyPassword.getStorySeq())){
             throw new IllegalArgumentException("MISMATCH_SEQ");
         }
-        if(!verifyPassword.getStoryPassword().equals(story.getStoryPassword())){
+        if(!verifyPassword.getStoryPassword().equals(story.getStoryPasscode())){
             throw new IllegalArgumentException("MISMATCH_PWD");
         }
     }
@@ -158,7 +157,7 @@ public class DonationService {
         DonationStory donationStory = donationRepository.findById(storySeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
 
-        if(!storyPasswordDto.getStoryPassword().equals(donationStory.getStoryPassword())){ //비밀번호 불일치시
+        if(!storyPasswordDto.getStoryPassword().equals(donationStory.getStoryPasscode())){ //비밀번호 불일치시
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
         donationRepository.delete(donationStory);

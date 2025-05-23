@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +35,7 @@ public class DonationCommentService {
         DonationStoryComment comment = DonationStoryComment.builder()
                 .story(story)
                 .commentWriter(requestDto.getCommentWriter())
-                .commentPassword(requestDto.getCommentPassword())
+                .commentPasscode(requestDto.getCommentPassword())
                 .contents(requestDto.getContents())
                 .writeTime(LocalDateTime.now())
                 .writerId(null)
@@ -66,7 +65,7 @@ public class DonationCommentService {
         DonationStoryComment storyComment = commentRepository.findById(commentSeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 댓글을 찾을 수 없습니다."));
 
-        if(commentDto.getCommentPassword() != storyComment.getCommentPassword()){
+        if(commentDto.getCommentPassword() != storyComment.getCommentPasscode()){
             throw new IllegalArgumentException("패스워드가 틀립니다.");
         }
         commentRepository.delete(storyComment);

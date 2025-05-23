@@ -1,7 +1,6 @@
 package koda.dto.response;
 
 import koda.entity.DonationStoryComment;
-import koda.entity.DonationStoryComment;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,7 +17,7 @@ public class DonationStoryCommentDto {
     public static DonationStoryCommentDto fromEntity(DonationStoryComment domainStoryComment) {
         return DonationStoryCommentDto.builder()
                 .commentWriter(domainStoryComment.getCommentWriter())
-                .password(domainStoryComment.getCommentPassword())
+                .password(domainStoryComment.getCommentPasscode())
                 .comments(domainStoryComment.getContents())
                 .commentWriteTime(domainStoryComment.getWriteTime()).build();
     }
