@@ -7,6 +7,4 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface DonationRepository extends JpaRepository<DonationStory, Long> {
 
-
-
 }

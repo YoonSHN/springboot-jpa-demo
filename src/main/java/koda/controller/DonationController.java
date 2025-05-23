@@ -44,13 +44,19 @@ public class DonationController {
 
     @GetMapping("/donationLetters/new")
     public ResponseEntity<?> getDonationWriteForm() {
-        return ResponseEntity.ok(donationService.loadDonationStoryFormData());
+        return ResponseEntity.ok(Map.of(
+                "status" , 200,
+                "message" , "기증 폼 대이터(권역 코드) 조회 성공",
+                "data" , donationService.loadDonationStoryFormData()
+        ));
+
+
     }
 
     @PostMapping(value = "/donationLetters", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createStory(@ModelAttribute DonationStoryCreateRequestDto dto, HttpSession session) throws Exception {
+    public ResponseEntity<?> createStory(@ModelAttribute DonationStoryCreateRequestDto dto) throws Exception {
         try {
-            donationService.createDonationStory(dto, session);
+            donationService.createDonationStory(dto);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "status", 201,

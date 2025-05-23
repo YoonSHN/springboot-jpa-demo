@@ -1,6 +1,9 @@
 package koda.dto.response;
 
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import koda.entity.DonationStory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,12 +17,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DonationStoryListDto {
+    @NotNull
     private Long storySeq;
-
+    @NotBlank
     private String storyTitle;
-
+    @NotBlank
     private String storyWriter;
+    @NotNull
+    @Min(0)
     private Integer readCount;
+    @NotNull
     private LocalDateTime writeTime;
 
     public static DonationStoryListDto fromEntity(DonationStory story){ //정적 팩토리 메서드(DTO변환용)

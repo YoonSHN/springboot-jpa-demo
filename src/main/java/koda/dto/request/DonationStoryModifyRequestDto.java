@@ -1,5 +1,6 @@
 package koda.dto.request;
 
+import koda.dto.response.AreaCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 @NoArgsConstructor
 public class DonationStoryModifyRequestDto {
 
-    private String areaCode;
+    private AreaCode areaCode;
     private String storyTitle;
 
     private String storyPassword;

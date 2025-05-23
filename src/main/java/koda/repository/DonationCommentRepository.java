@@ -5,6 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DonationCommentRepository extends JpaRepository<DonationStoryComment, Long> {
 
-
 }
 

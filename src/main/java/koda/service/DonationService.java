@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 import koda.dto.request.*;
+import koda.dto.response.AreaCode;
 import koda.dto.response.DonationStoryListDto;
 import koda.dto.response.DonationStoryDetailDto;
 import koda.dto.response.DonationStoryWriteFormDto;
@@ -45,8 +46,10 @@ public class DonationService {
     기증 후 스토리 글쓰기 폼 데이터 출력
      */
     public DonationStoryWriteFormDto loadDonationStoryFormData(){
-        List<String> areas = List.of("AREA100", "AREA200","AREA300");
-
+        List<AreaCode> areas = List.of(AreaCode.AREA100, AreaCode.AREA200, AreaCode.AREA300);
+        if(areas.isEmpty()){
+            throw new RuntimeException("사용 가능한 지역 코드가 없습니다.");
+        }
         return DonationStoryWriteFormDto.builder()
                 .areaOptions(areas).build();
     }
@@ -54,10 +57,11 @@ public class DonationService {
     /*
     기증 후 스토리 글쓰기 등록
      */
-    public void createDonationStory(DonationStoryCreateRequestDto requestDto, HttpSession session){
-        String areaCode = requestDto.getAreaCode();
+    public void createDonationStory(DonationStoryCreateRequestDto requestDto){
+        String areaCode = requestDto.getAreaCode().toString();
         if(areaCode== null || areaCode.isBlank())
             throw new IllegalArgumentException("권역 선택은 필수입니다.");
+
         if(!(areaCode.equals("AREA100") || areaCode.equals("AREA200") || areaCode.equals("AREA300"))){
             throw new IllegalArgumentException("존재하지 않는 권역 코드입니다.");
         }
@@ -101,11 +105,7 @@ public class DonationService {
                 .storyContents(requestDto.getStoryContents())
                 .fileName(storedFileName)
                 .orgFileName(originalFileName)
-                .writeTime(LocalDateTime.now())
-                .writerId(null)
-                .modifyTime(null)
-                .modifierId(null)
-                .delFlag("N").build();
+                .build();
 
         donationRepository.save(story);
     }

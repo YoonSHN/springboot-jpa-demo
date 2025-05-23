@@ -17,7 +17,7 @@ public class DonationStoryDetailDto {
     private String storyWriter;
     private String uploadDate;
 
-    private String areaCode;
+    private AreaCode areaCode;
     private Integer readCount;
     private String storyContent;
 
