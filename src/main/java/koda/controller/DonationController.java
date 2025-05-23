@@ -1,7 +1,9 @@
 package koda.controller;
 
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import koda.dto.request.*;
+import koda.dto.response.AreaCode;
 import koda.dto.response.DonationStoryDetailDto;
 import koda.dto.response.DonationStoryListDto;
 import koda.service.DonationCommentService;
@@ -9,8 +11,10 @@ import koda.service.DonationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import java.beans.PropertyEditorSupport;
 import java.util.List;
 import java.util.Map;
 
@@ -54,12 +58,12 @@ public class DonationController {
     }
 
     @PostMapping(value = "/donationLetters", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createStory(@ModelAttribute DonationStoryCreateRequestDto dto) throws Exception {
+    public ResponseEntity<?> createStory(@ModelAttribute @Valid DonationStoryCreateRequestDto dto) throws Exception {
         try {
             donationService.createDonationStory(dto);
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "status", 201,
+                    "code", 201,
                     "message", "스토리가 성공적으로 등록되었습니다."
             ));
         } catch (IllegalArgumentException ie) {
@@ -238,5 +242,14 @@ public class DonationController {
                     "message", "서버 내부 오류가 발생했습니다."
             ));
         }
+    }
+    @InitBinder
+    public void initBinder(WebDataBinder binder) { //String -> enum
+        binder.registerCustomEditor(AreaCode.class, new PropertyEditorSupport() {
+            @Override
+            public void setAsText(String text) throws IllegalArgumentException {
+                setValue(AreaCode.valueOf(text));
+            }
+        });
     }
 }
