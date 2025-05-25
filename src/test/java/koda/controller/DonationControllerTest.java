@@ -102,7 +102,7 @@ public class DonationControllerTest {
         doNothing().when(donationService).createDonationStory(any(DonationStoryCreateRequestDto.class));
         mockMvc.perform(multipart("/donationLetters")
                 .file(file)
-                .param("areaCode", requestDto.getAreaCode().toString())
+                .param("areaCode", requestDto.getAreaCode().name())
                 .param("storyTitle", requestDto.getStoryTitle())
                         .param("storyPasscode", requestDto.getStoryPasscode())
                         .param("storyContents", requestDto.getStoryContents())
@@ -124,7 +124,7 @@ public class DonationControllerTest {
                 "hello world".getBytes()
         );
         DonationStoryCreateRequestDto requestDto = new DonationStoryCreateRequestDto(
-                AreaCode.AREA100,null,"ddddd","작가1",
+                AreaCode.AREA100,"dqwdwqkodqdq","ddddqwdqdd","작가1",
                 "안녕하세요","ㅇwqkdoqwkdowqkdq",file);
 
         doThrow(new IllegalArgumentException("예외 발생")).when(donationService).createDonationStory(any(DonationStoryCreateRequestDto.class));

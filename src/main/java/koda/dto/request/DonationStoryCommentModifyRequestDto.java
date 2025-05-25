@@ -2,6 +2,7 @@ package koda.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import koda.entity.DonationStory;
 import lombok.*;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -13,11 +14,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class DonationStoryCommentModifyRequestDto {
-
-
+    @NotBlank
     private String commentWriter;
-    private String commentPassword;
+    @NotBlank
+    private String commentPasscode;
+    @NotBlank
     private String commentContents;
-    private String modifyTime;
+    @NotBlank
+    private String captchaToken;
 
 }

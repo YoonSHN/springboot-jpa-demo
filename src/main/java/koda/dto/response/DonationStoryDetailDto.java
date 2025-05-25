@@ -13,6 +13,7 @@ import java.util.List;
 @Getter
 public class DonationStoryDetailDto {
 
+    private Long storySeq;
     private String title;
     private String storyWriter;
     private String uploadDate;
@@ -25,6 +26,7 @@ public class DonationStoryDetailDto {
 
     public static DonationStoryDetailDto fromEntity(DonationStory story){
         return DonationStoryDetailDto.builder()
+                .storySeq(story.getStorySeq())
                 .title(story.getStoryTitle())
                 .storyWriter(story.getStoryWriter())
                 .uploadDate(story.getWriteTime().toLocalDate().toString())

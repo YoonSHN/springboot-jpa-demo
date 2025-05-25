@@ -55,7 +55,7 @@ public class DonationStoryComment {
 
     public void modifyDonationStoryComment(DonationStoryCommentModifyRequestDto requestDto) {
         this.commentWriter = requestDto.getCommentWriter();
-        this.commentPasscode = requestDto.getCommentPassword();
+        this.commentPasscode = requestDto.getCommentPasscode();
         this.contents = requestDto.getCommentContents();
     }
 

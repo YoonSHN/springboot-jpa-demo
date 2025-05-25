@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class VerifyStoryPasswordDto {
-    private Long storySeq;
-    private String storyPassword;
-
+public class VerifyStoryPasscodeDto {
+    private String storyPasscode;
 }
