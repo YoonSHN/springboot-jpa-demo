@@ -9,6 +9,10 @@ import koda.dto.response.DonationStoryListDto;
 import koda.service.DonationCommentService;
 import koda.service.DonationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.WebDataBinder;
@@ -27,15 +31,25 @@ public class DonationController {
     private final DonationCommentService donationCommentService;
 
     @GetMapping("/donationLetters")
-    public ResponseEntity<?> getAllDonationList() {
+    public ResponseEntity<?> getAllDonationList(
+            @PageableDefault(size = 20, sort="storySeq", direction=Sort.Direction.DESC) Pageable pageable
+        ){
         try {
-            List<DonationStoryListDto> lists = donationService.findAllDonationStories();
+            Page<DonationStoryListDto> page = donationService.findAllDonationStories(pageable);
             System.out.println("서비스 호출 완료");
 
             return ResponseEntity.ok(Map.of(
                     "status", 200,
                     "message", "기증 후 스토리 목록 가져오기 성공",
-                    "data", lists));
+                    "data", page.getContent(),
+                        "pageInfo", Map.of(
+                                "totalPages", page.getTotalPages(),
+                                "totalElements", page.getTotalElements(),
+                                "currentPage", page.getNumber(),
+                                "isFirst", page.isFirst(),
+                                "isLast", page.isLast()
+                        )
+            ));
         } catch (RuntimeException re) {
             re.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
@@ -53,14 +67,12 @@ public class DonationController {
                 "message" , "기증 폼 대이터(권역 코드) 조회 성공",
                 "data" , donationService.loadDonationStoryFormData()
         ));
-
-
     }
 
     @PostMapping(value = "/donationLetters", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createStory(@ModelAttribute @Valid DonationStoryCreateRequestDto dto) throws Exception {
+    public ResponseEntity<?> createStory(@ModelAttribute @Valid DonationStoryCreateRequestDto requestDto) throws Exception {
         try {
-            donationService.createDonationStory(dto);
+            donationService.createDonationStory(requestDto);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "code", 201,
@@ -76,11 +88,12 @@ public class DonationController {
             return ResponseEntity.status(500).body(Map.of(
                     "success", false,
                     "code", 500,
-                    "message", "서버 내부 오류가 발생했습니다."
+                    "message", "서버 내부 오류가 발생했습니다.",
+                    "error", e.getMessage()
             ));
         }
     }
-
+    /*스토리 상세 조회*/
     @GetMapping("/donationLetters/{storySeq}")
     public ResponseEntity<?> getDonationStoryDetail(@PathVariable("storySeq") Long storySeq) {
         DonationStoryDetailDto donationDetailStory = donationService.findDonationStory(storySeq);
@@ -91,12 +104,12 @@ public class DonationController {
                 "data", donationDetailStory
         ));
     }
-
+    /*스토리 수정인증*/
     @PostMapping("/donationLetters/{storySeq}/verifyPwd")
     public ResponseEntity<?> verifyStoryPassword(@PathVariable("storySeq") Long storySeq,
-                                                 @RequestBody VerifyStoryPasswordDto dto) {
+                                                 @RequestBody VerifyStoryPasscodeDto passCordDto) {
         try {
-            donationService.verifyPasswordWithPassword(storySeq, dto);
+            donationService.verifyPasswordWithPassword(storySeq, passCordDto);
 
             return ResponseEntity.ok(Map.of(
                     "result", 1,
@@ -105,7 +118,6 @@ public class DonationController {
         } catch (IllegalArgumentException e) {
             String message = switch (e.getMessage()) {
                 case "NOT_FOUND" -> "해당 게시글이 존재하지 않습니다.";
-                case "MISMATCH_SEQ" -> "잘못된 접근입니다.";
                 case "MISMATCH_PWD" -> "비밀번호가 일치하지 않습니다.";
                 default -> "알 수 없는 오류가 발생했습니다.";
             };
@@ -120,8 +132,8 @@ public class DonationController {
     /*
     기증 후 스토리 수정
      */
-    @PatchMapping("/donationLetters/{storySeq}")
-    public ResponseEntity<?> modifyStory(@PathVariable("storySeq") Long storySeq, @RequestBody DonationStoryModifyRequestDto requestDto) {
+    @PatchMapping(value="/donationLetters/{storySeq}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> modifyStory(@PathVariable("storySeq") Long storySeq, @ModelAttribute @Valid DonationStoryModifyRequestDto requestDto) {
         try {
             donationService.modifyDonationStory(storySeq, requestDto);
 
@@ -149,9 +161,9 @@ public class DonationController {
     가증 후 스토리 스토리 삭제
      */
     @DeleteMapping("/donationLetters/{storySeq}")
-    public ResponseEntity<?> deleteStory(@PathVariable("storySeq") Long storySeq, @RequestBody VerifyStoryPasswordDto storyPasswordDto) {
+    public ResponseEntity<?> deleteStory(@PathVariable("storySeq") Long storySeq, @RequestBody VerifyStoryPasscodeDto storyPasscodeDto) {
         try {
-            donationService.deleteDonationStory(storySeq, storyPasswordDto);
+            donationService.deleteDonationStory(storySeq, storyPasscodeDto);
             return ResponseEntity.ok(Map.of(
                     "result", 1,
                     "message", "스토리가 정상적으로 삭제 되었습니다."
@@ -168,7 +180,7 @@ public class DonationController {
     기증 후 스토리 댓글 등록
      */
     @PostMapping("/donationLetters/{storySeq}/comments")
-    public ResponseEntity<?> createComment(@PathVariable("storySeq") Long storySeq, @RequestBody CommentCreateRequestDto requestDto) {
+    public ResponseEntity<?> createComment(@PathVariable("storySeq") Long storySeq, @RequestBody @Valid CommentCreateRequestDto requestDto) {
         try {
             donationCommentService.createDonationStoryComment(storySeq, requestDto);
 
@@ -181,7 +193,7 @@ public class DonationController {
             return ResponseEntity.status(400).body(Map.of(
                     "success", false,
                     "code", 400,
-                    "message", "필수 입력값이 누락되었습니다."
+                    "message", ie.getMessage()
             ));
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of(
@@ -208,48 +220,49 @@ public class DonationController {
             return ResponseEntity.status(400).body(Map.of(
                     "success", false,
                     "code", 400,
-                    "message", "필수 입력값이 누락되었습니다."
+                    "message", ie.getMessage()
             ));
         }catch(Exception e){
             return ResponseEntity.status(500).body(Map.of(
                     "success",false,
                     "code", 500,
-                    "message", "서버 내부 오류가 발생했습니다."
+                    "message", e.getMessage()
             ));
         }
     }
     @DeleteMapping("/donationLetters/{storySeq}/comments/{commentSeq}")
     public ResponseEntity<?> deleteComment(@PathVariable("storySeq") Long storySeq,
                                            @PathVariable("commentSeq") Long commentSeq,
-                                           @RequestBody VerifyCommentPasswordDto commentPassword){
-        try{
+                                           @RequestBody VerifyCommentPasswordDto commentPassword) {
+        try {
             donationCommentService.deleteDonationComment(commentSeq, commentPassword);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "code", 201,
                     "message", "스토리 댓글이 성공적으로 삭제되었습니다."
             ));
-        }catch(IllegalArgumentException ie){
+        } catch (IllegalArgumentException ie) {
             return ResponseEntity.status(400).body(Map.of(
                     "success", false,
                     "code", 400,
-                    "message", "필수 입력값이 누락되었습니다."
+                    "message", ie.getMessage()
             ));
-        }catch(Exception e){
+        } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of(
                     "success", false,
                     "code", 500,
-                    "message", "서버 내부 오류가 발생했습니다."
+                    "message",  e.getMessage()
             ));
         }
     }
     @InitBinder
-    public void initBinder(WebDataBinder binder) { //String -> enum
+    public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(AreaCode.class, new PropertyEditorSupport() {
             @Override
-            public void setAsText(String text) throws IllegalArgumentException {
+            public void setAsText(String text) {
                 setValue(AreaCode.valueOf(text));
             }
         });
     }
 }
+

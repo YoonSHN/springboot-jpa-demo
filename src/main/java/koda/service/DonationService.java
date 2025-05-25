@@ -10,6 +10,8 @@ import koda.dto.response.DonationStoryWriteFormDto;
 import koda.entity.DonationStory;
 import koda.repository.DonationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,11 +35,9 @@ public class DonationService {
     /*
     기증 후 스토리 게시글 출력
      */
-    public List<DonationStoryListDto> findAllDonationStories() {
-        return donationRepository.findAll() //엔티티 -> DTO로 변환
-                .stream()
-                .map(DonationStoryListDto::fromEntity)
-                .toList();
+    public Page<DonationStoryListDto> findAllDonationStories(Pageable pageable) {
+        return donationRepository.findAll(pageable) //엔티티 -> DTO로 변환
+                .map(DonationStoryListDto::fromEntity);
     }
 
     /*
@@ -72,19 +72,16 @@ public class DonationService {
         if(!validatePassword(requestDto.getStoryPasscode())){
             throw new RuntimeException("패스워드가 틀립니다.");
         }
-
-
         //캡차 검증 코드 추가해야 함.
         String storedFileName = null;
         String originalFileName = null;
 
-
-        String contentType= requestDto.getFile().getContentType();
-        if(contentType == null || !contentType.startsWith("image")){
-            throw new IllegalArgumentException("이미지 파일만 업로드 가능합니다.");
-        }
         MultipartFile file = requestDto.getFile();
         if(file != null && !file.isEmpty()){
+            String contentType= requestDto.getFile().getContentType();
+            if(contentType == null || !contentType.startsWith("image")){
+                throw new IllegalArgumentException("이미지 파일만 업로드 가능합니다.");
+            }
             if(requestDto.getFile() != null && !requestDto.getFile().isEmpty()){
                 try{
                     originalFileName = requestDto.getFile().getOriginalFilename();
@@ -100,6 +97,7 @@ public class DonationService {
 
         DonationStory story = DonationStory.builder()
                 .areaCode(requestDto.getAreaCode())
+                .storyTitle(requestDto.getStoryTitle())
                 .storyPasscode(requestDto.getStoryPasscode())
                 .storyWriter(requestDto.getStoryWriter())
                 .anonymityFlag(null)
@@ -125,41 +123,61 @@ public class DonationService {
 
     }
 
-    public void verifyPasswordWithPassword(Long storySeq, VerifyStoryPasswordDto verifyPassword) {
+    public void verifyPasswordWithPassword(Long storySeq, VerifyStoryPasscodeDto verifyPassword) {
         DonationStory story = donationRepository.findById(storySeq)
                 .orElseThrow(() -> new IllegalArgumentException("NOT_FOUND"));
 
-        if(!validatePassword(verifyPassword.getStoryPassword())){
-            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        if(!validatePassword(verifyPassword.getStoryPasscode())){
+            throw new RuntimeException("비밀번호가 형식에 맞지 않습니다.");
         }
-        if(storySeq.equals(verifyPassword.getStorySeq())){
-            throw new IllegalArgumentException("MISMATCH_SEQ");
-        }
-        if(!verifyPassword.getStoryPassword().equals(story.getStoryPasscode())){
+        if(!verifyPassword.getStoryPasscode().equals(story.getStoryPasscode())){
             throw new IllegalArgumentException("MISMATCH_PWD");
         }
     }
-
+    /*게시물 수정*/
     @Transactional
-    public void modifyDonationStory(Long storySeq, DonationStoryModifyRequestDto requestDto){
+    public void modifyDonationStory(Long storySeq, DonationStoryModifyRequestDto requestDto) {
         DonationStory donationStory = donationRepository.findById(storySeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
 
-        String storedFileName = UUID.randomUUID().toString().replace("-", "").toUpperCase(); //uuid 처리
-        if(validatePassword(requestDto.getStoryPassword())){
-            donationStory.modifyDonationStory(requestDto, storedFileName );
+        if (donationStory.getFileName() != null) { //기존에 파일 정보 삭제
+            Path oldPath = Paths.get("target/test-uploads", donationStory.getFileName());
+            try {
+                Files.deleteIfExists(oldPath);
+            } catch (IOException e) {
+                throw new RuntimeException("기존 이미지 삭제 실패", e);
+            }
         }
-        throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+        String storedFileName = null;
+        String originalFileName = null;
 
+        MultipartFile file = requestDto.getFile();
+        if(file != null && !file.isEmpty()){
+            String contentType= requestDto.getFile().getContentType();
+            if(contentType == null || !contentType.startsWith("image")){
+                throw new IllegalArgumentException("이미지 파일만 업로드 가능합니다.");
+            }
+            if(requestDto.getFile() != null && !requestDto.getFile().isEmpty()){
+                try{
+                    originalFileName = requestDto.getFile().getOriginalFilename();
+                    storedFileName = UUID.randomUUID().toString().replace("-", "").toUpperCase();
+
+                    Path savePath = Paths.get("target/test-uploads",storedFileName); //파일 주소 얻기(일단 임시 주소)
+                    Files.copy(requestDto.getFile().getInputStream(), savePath); //파일 저장
+                } catch (IOException e) {
+                    throw new RuntimeException("파일 업로드 실패", e);
+                }
+            }
+        }
     }
 
     @Transactional
-    public void deleteDonationStory(Long storySeq, VerifyStoryPasswordDto storyPasswordDto){
+    public void deleteDonationStory(Long storySeq, VerifyStoryPasscodeDto storyPasswordDto){
 
         DonationStory donationStory = donationRepository.findById(storySeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
 
-        if(!storyPasswordDto.getStoryPassword().equals(donationStory.getStoryPasscode())){ //비밀번호 불일치시
+        if(!storyPasswordDto.getStoryPasscode().equals(donationStory.getStoryPasscode())){ //비밀번호 불일치시
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
         donationRepository.delete(donationStory);

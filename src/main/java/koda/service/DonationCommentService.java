@@ -28,14 +28,14 @@ public class DonationCommentService {
         if (requestDto.getCommentWriter() == null || requestDto.getCommentWriter().isBlank()) {
             throw new IllegalArgumentException("댓글 작성자가 존재하지 않습니다.");
         }
-        if (requestDto.getCommentPassword() == null || requestDto.getCommentPassword().isBlank()) {
+        if (requestDto.getCommentPasscode() == null || requestDto.getCommentPasscode().isBlank()) {
             throw new IllegalArgumentException("비밀번호 입력은 필수입니다.");
         }
 
         DonationStoryComment comment = DonationStoryComment.builder()
                 .story(story)
                 .commentWriter(requestDto.getCommentWriter())
-                .commentPasscode(requestDto.getCommentPassword())
+                .commentPasscode(requestDto.getCommentPasscode())
                 .contents(requestDto.getContents())
                 .writeTime(LocalDateTime.now())
                 .writerId(null)
@@ -54,7 +54,7 @@ public class DonationCommentService {
         if(requestDto.getCommentWriter() == null || requestDto.getCommentWriter().isBlank()){
             throw new IllegalArgumentException("댓글 작성자가 존재하지 않습니다.");
         }
-        if(requestDto.getCommentPassword() == null || requestDto.getCommentPassword().isBlank()){
+        if(requestDto.getCommentPasscode() == null || requestDto.getCommentPasscode().isBlank()){
             throw new IllegalArgumentException("비밀번호 입력은 필수입니다.");
         }
 
@@ -65,7 +65,7 @@ public class DonationCommentService {
         DonationStoryComment storyComment = commentRepository.findById(commentSeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 댓글을 찾을 수 없습니다."));
 
-        if(commentDto.getCommentPassword() != storyComment.getCommentPasscode()){
+        if(!commentDto.getCommentPasscode().equals(storyComment.getCommentPasscode())){
             throw new IllegalArgumentException("패스워드가 틀립니다.");
         }
         commentRepository.delete(storyComment);

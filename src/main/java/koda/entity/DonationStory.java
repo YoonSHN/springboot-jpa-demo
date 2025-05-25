@@ -82,14 +82,15 @@ public class DonationStory {
         comments.add(comment); //
         comment.setStory(this);
     }
-
+    //조회수 증가
     public void increaseReadCount(){ //조회수 증가메서드
         this.readCount = (this.readCount == null) ? 1 : readCount + 1;
     }
-    public void modifyDonationStory(DonationStoryModifyRequestDto requestDto, String fileName){
+
+    //수정때 이용
+    public void modifyDonationStory(DonationStoryModifyRequestDto requestDto, String fileName ){
         this.areaCode = requestDto.getAreaCode();
         this.storyTitle = requestDto.getStoryTitle();
-        this.storyPasscode = requestDto.getStoryPassword();
         this.storyWriter = requestDto.getStoryWriter();
         this.storyContents = requestDto.getStoryContents();
         this.orgFileName = requestDto.getFile().getOriginalFilename();
