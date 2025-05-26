@@ -1,6 +1,8 @@
 package koda.dto.response;
 
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import koda.entity.DonationStoryComment;
 import koda.entity.DonationStory;
 import lombok.Builder;
@@ -12,9 +14,11 @@ import java.util.List;
 @Builder
 @Getter
 public class DonationStoryDetailDto {
-
+    @NotNull
     private Long storySeq;
+    @NotBlank
     private String title;
+    @NotBlank
     private String storyWriter;
     private String uploadDate;
 

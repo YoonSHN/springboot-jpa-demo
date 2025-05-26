@@ -68,6 +68,7 @@ public class DonationCommentService {
         storyComment.modifyDonationStoryComment(requestDto);
     }
 
+    @Transactional
     public void deleteDonationComment(Long commentSeq, VerifyCommentPasscodeDto commentDto){
         DonationStoryComment storyComment = commentRepository.findById(commentSeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 댓글을 찾을 수 없습니다."));
