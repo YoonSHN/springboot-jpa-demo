@@ -1,6 +1,5 @@
 package koda.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import koda.dto.request.*;
 import koda.dto.response.AreaCode;
@@ -16,21 +15,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.net.URI;
+
 @Service
 @RequiredArgsConstructor
 public class DonationService {
 
     private final DonationRepository donationRepository;
+    private final CaptchaService captchaService;
 
     /*
     기증 후 스토리 게시글 출력
@@ -72,11 +68,17 @@ public class DonationService {
         if(!validatePassword(requestDto.getStoryPasscode())){
             throw new RuntimeException("패스워드가 틀립니다.");
         }
+        //!captchaService.verifyCaptcha(requestDto.getCaptchaToken())
+        if (false) {
+            throw new IllegalArgumentException("캡차 인증 실패");
+        }
         //캡차 검증 코드 추가해야 함.
         String storedFileName = null;
         String originalFileName = null;
 
         MultipartFile file = requestDto.getFile();
+        System.out.println("file : 11" + file.getContentType());
+
         if(file != null && !file.isEmpty()){
             String contentType= requestDto.getFile().getContentType();
             if(contentType == null || !contentType.startsWith("image")){
@@ -134,57 +136,66 @@ public class DonationService {
             throw new IllegalArgumentException("MISMATCH_PWD");
         }
     }
-    /*게시물 수정*/
     @Transactional
     public void modifyDonationStory(Long storySeq, DonationStoryModifyRequestDto requestDto) {
         DonationStory donationStory = donationRepository.findById(storySeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
 
-        if (donationStory.getFileName() != null) { //기존에 파일 정보 삭제
-            Path oldPath = Paths.get("target/test-uploads", donationStory.getFileName());
-            try {
-                Files.deleteIfExists(oldPath);
-            } catch (IOException e) {
-                throw new RuntimeException("기존 이미지 삭제 실패", e);
-            }
-        }
-        String storedFileName = null;
-        String originalFileName = null;
-
         MultipartFile file = requestDto.getFile();
-        if(file != null && !file.isEmpty()){
-            String contentType= requestDto.getFile().getContentType();
-            if(contentType == null || !contentType.startsWith("image")){
+        String storedFileName = donationStory.getFileName();
+        String originalFileName = donationStory.getOrgFileName();
+
+        //!captchaService.verifyCaptcha(requestDto.getCaptchaToken())
+        if (false) {
+            throw new IllegalArgumentException("캡차 인증 실패");
+        }
+        // 새 파일이 들어왔고, 기존 파일과 다른 경우만 삭제 + 교체
+        if (file != null && !file.isEmpty()) {
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image")) {
                 throw new IllegalArgumentException("이미지 파일만 업로드 가능합니다.");
             }
-            if(requestDto.getFile() != null && !requestDto.getFile().isEmpty()){
-                try{
-                    originalFileName = requestDto.getFile().getOriginalFilename();
-                    storedFileName = UUID.randomUUID().toString().replace("-", "").toUpperCase();
 
-                    Path savePath = Paths.get("target/test-uploads",storedFileName); //파일 주소 얻기(일단 임시 주소)
-                    Files.copy(requestDto.getFile().getInputStream(), savePath); //파일 저장
+            boolean isSameFile = originalFileName != null && originalFileName.equals(file.getOriginalFilename());
+
+            if (!isSameFile) {
+                // 기존 파일 삭제
+                if (storedFileName != null) {
+                    Path oldPath = Paths.get("target/test-uploads", storedFileName);
+                    try {
+                        Files.deleteIfExists(oldPath);
+                    } catch (IOException e) {
+                        throw new RuntimeException("기존 이미지 삭제 실패", e);
+                    }
+                }
+
+                // 새 파일 저장
+                try {
+                    originalFileName = file.getOriginalFilename();
+                    storedFileName = UUID.randomUUID().toString().replace("-", "").toUpperCase();
+                    Path savePath = Paths.get("target/test-uploads", storedFileName);
+                    Files.copy(file.getInputStream(), savePath);
                 } catch (IOException e) {
                     throw new RuntimeException("파일 업로드 실패", e);
                 }
             }
         }
+
+        // 엔티티 수정
+        donationStory.modifyDonationStory(requestDto, storedFileName, originalFileName);
     }
 
     @Transactional
-    public void deleteDonationStory(Long storySeq, VerifyStoryPasscodeDto storyPasswordDto){
+    public void deleteDonationStory(Long storySeq, VerifyStoryPasscodeDto storyPasscodeDto){
 
         DonationStory donationStory = donationRepository.findById(storySeq)
                 .orElseThrow(() -> new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
 
-        if(!storyPasswordDto.getStoryPasscode().equals(donationStory.getStoryPasscode())){ //비밀번호 불일치시
+        if(!storyPasscodeDto.getStoryPasscode().equals(donationStory.getStoryPasscode())){ //비밀번호 불일치시
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
         donationRepository.delete(donationStory);
     }
-
-
-
 
     //비밀번호 검증 (영 + 숫자 + 8자 ~ 16자 코드) - story, comment 모두 처리
     public boolean validatePassword(String password){
@@ -194,32 +205,6 @@ public class DonationService {
         return false;
     }
 
-    //캡차 검증 ( 프론트에서 캡차 토큰을 받아 다시 검증하는 코드 , hcaptcha api 를 호출하여 토큰을 기반으로 검증
-    public boolean verifyCaptcha(String token){
-        String secret = "team-secret-key";
-        String url = "https://hcaptcha.com/siteverify";
-
-        try{
-            HttpClient client = HttpClient.newHttpClient();
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .POST(HttpRequest.BodyPublishers.ofString("secret=" + secret + "&response" + token))
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .build();
-
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> result =  mapper.readValue(response.body(), Map.class);
-
-            return Boolean.TRUE.equals(result.get("success"));
-        }catch(Exception e){
-            e.printStackTrace();
-            return false;
-        }
-
-    }
 
 
 }

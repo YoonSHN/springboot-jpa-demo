@@ -3,16 +3,14 @@ package koda.dto.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import koda.dto.response.AreaCode;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Setter
 public class DonationStoryModifyRequestDto {
 
     @NotNull

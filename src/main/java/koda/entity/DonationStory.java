@@ -88,13 +88,13 @@ public class DonationStory {
     }
 
     //수정때 이용
-    public void modifyDonationStory(DonationStoryModifyRequestDto requestDto, String fileName ){
+    public void modifyDonationStory(DonationStoryModifyRequestDto requestDto, String fileName, String orgFileName) {
         this.areaCode = requestDto.getAreaCode();
         this.storyTitle = requestDto.getStoryTitle();
         this.storyWriter = requestDto.getStoryWriter();
         this.storyContents = requestDto.getStoryContents();
-        this.orgFileName = requestDto.getFile().getOriginalFilename();
         this.fileName = fileName;
+        this.orgFileName = orgFileName;
     }
 
 

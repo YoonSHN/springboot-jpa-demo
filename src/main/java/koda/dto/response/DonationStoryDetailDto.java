@@ -21,6 +21,8 @@ public class DonationStoryDetailDto {
     private AreaCode areaCode;
     private Integer readCount;
     private String storyContent;
+    private String fileName;        // 저장된 파일 이름 (서버 파일명)
+    private String orgFileName;
 
     private List<DonationStoryCommentDto> comments;
 
@@ -33,6 +35,8 @@ public class DonationStoryDetailDto {
                 .areaCode(story.getAreaCode())
                 .readCount(story.getReadCount())
                 .storyContent(story.getStoryContents())
+                .fileName(story.getFileName())
+                .orgFileName(story.getOrgFileName())
                 .comments(
                         story.getComments().stream()
                                 .map(DonationStoryCommentDto::fromEntity)
