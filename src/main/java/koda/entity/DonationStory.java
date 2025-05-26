@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import koda.dto.request.DonationStoryModifyRequestDto;
 import koda.dto.response.AreaCode;
 import lombok.*;
-import org.springframework.data.annotation.LastModifiedDate;
+
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
