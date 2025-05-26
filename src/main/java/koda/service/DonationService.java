@@ -80,7 +80,7 @@ public class DonationService {
         String originalFileName = null;
 
         MultipartFile file = requestDto.getFile();
-        System.out.println("file : 11" + file.getContentType());
+        System.out.println("file :" + file.getContentType());
 
         if(file != null && !file.isEmpty()){
             String contentType= requestDto.getFile().getContentType();
