@@ -1,8 +1,6 @@
 package koda.controller;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+
 import koda.dto.request.DonationStoryCreateRequestDto;
 import koda.dto.response.AreaCode;
 import koda.dto.response.DonationStoryListDto;
