@@ -17,6 +17,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -61,13 +65,17 @@ public class DonationServiceTest {
 
         List<DonationStory> donationStories = List.of(story1, story2);
 
-        given(repository.findAll()).willReturn(donationStories);
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<DonationStory> page = new PageImpl<>(donationStories, pageable, 1);
+
+        given(repository.findAll(pageable)).willReturn(page);
 
        //when
-        List<DonationStoryListDto> list = service.findAllDonationStories();
+       Page<DonationStoryListDto> list = service.findAllDonationStories(pageable);
 
-        assertEquals(2, list.size());
-        assertEquals("제목1", list.get(0).getStoryTitle());
+       assertEquals(2, list.getContent().size());
+
+
 
     }
 

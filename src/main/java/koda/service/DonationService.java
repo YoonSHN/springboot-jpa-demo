@@ -1,6 +1,6 @@
 package koda.service;
 
-import jakarta.transaction.Transactional;
+
 import koda.dto.request.*;
 import koda.dto.response.AreaCode;
 import koda.dto.response.DonationStoryListDto;
@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -31,8 +32,9 @@ public class DonationService {
     /*
     기증 후 스토리 게시글 출력
      */
+    @Transactional(readOnly = true)
     public Page<DonationStoryListDto> findAllDonationStories(Pageable pageable) {
-        return donationRepository.findAll(pageable) //엔티티 -> DTO로 변환
+        return donationRepository.findAllDonationStories(pageable) //엔티티 -> DTO로 변환
                 .map(DonationStoryListDto::fromEntity);
     }
 
@@ -51,6 +53,7 @@ public class DonationService {
     /*
     기증 후 스토리 글쓰기 등록
      */
+    @Transactional
     public void createDonationStory(DonationStoryCreateRequestDto requestDto){
         String areaCode = requestDto.getAreaCode().toString();
         if(areaCode== null || areaCode.isBlank())
@@ -116,7 +119,7 @@ public class DonationService {
      */
     @Transactional
     public DonationStoryDetailDto findDonationStory(Long storySeq){
-        DonationStory storyDetailStory = donationRepository.findById(storySeq)
+        DonationStory storyDetailStory = donationRepository.findWithCommentsById(storySeq)
                 .orElseThrow( () -> new IllegalArgumentException("해당 게시글을 찾을 수 없습니다."));
 
         storyDetailStory.increaseReadCount(); //조회수 증가
@@ -124,7 +127,9 @@ public class DonationService {
         return DonationStoryDetailDto.fromEntity(storyDetailStory);
 
     }
-
+    /*
+    패스워드 인증 메서드
+     */
     public void verifyPasswordWithPassword(Long storySeq, VerifyStoryPasscodeDto verifyPassword) {
         DonationStory story = donationRepository.findById(storySeq)
                 .orElseThrow(() -> new IllegalArgumentException("NOT_FOUND"));
