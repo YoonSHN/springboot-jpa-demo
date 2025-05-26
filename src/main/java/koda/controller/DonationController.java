@@ -6,6 +6,7 @@ import koda.dto.request.*;
 import koda.dto.response.AreaCode;
 import koda.dto.response.DonationStoryDetailDto;
 import koda.dto.response.DonationStoryListDto;
+import koda.dto.response.DonationStoryWriteFormDto;
 import koda.service.DonationCommentService;
 import koda.service.DonationService;
 import lombok.RequiredArgsConstructor;
@@ -39,34 +40,50 @@ public class DonationController {
             System.out.println("서비스 호출 완료");
 
             return ResponseEntity.ok(Map.of(
-                    "status", 200,
+                    "success", true,
+                    "code", 200,
                     "message", "기증 후 스토리 목록 가져오기 성공",
                     "data", page.getContent(),
-                        "pageInfo", Map.of(
-                                "totalPages", page.getTotalPages(),
-                                "totalElements", page.getTotalElements(),
-                                "currentPage", page.getNumber(),
-                                "isFirst", page.isFirst(),
-                                "isLast", page.isLast()
-                        )
+                    "pageInfo", Map.of(
+                            "totalPages", page.getTotalPages(),
+                            "totalElements", page.getTotalElements(),
+                            "currentPage", page.getNumber(),
+                            "pageSize", page.getSize(),
+                            "numberOfElements", page.getNumberOfElements(),
+                            "isFirst", page.isFirst(),
+                            "isLast", page.isLast(),
+                            "hasNext", page.hasNext(),
+                            "hasPrevious", page.hasPrevious(),
+                            "sort", page.getSort().toString()
+                    )
             ));
         } catch (RuntimeException re) {
             re.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
-                    "status", 500,
-                    "message", "기증 후 스토리 목록 가져오기 실패",
-                    "error", re.getMessage()
+                    "success", false,
+                    "code", 500,
+                    "message", "기증 후 스토리 목록 가져오기 실패"
             ));
         }
     }
 
     @GetMapping("/donationLetters/new")
     public ResponseEntity<?> getDonationWriteForm() {
-        return ResponseEntity.ok(Map.of(
-                "status" , 200,
-                "message" , "기증 폼 대이터(권역 코드) 조회 성공",
-                "data" , donationService.loadDonationStoryFormData()
+        DonationStoryWriteFormDto formDto = donationService.loadDonationStoryFormData();
+        if(formDto != null) {
+            return ResponseEntity.ok(Map.of(
+                    "success" , true,
+                    "code" , 200,
+                    "message" , "폼 데이터 로드 성공",
+                    "data" , donationService.loadDonationStoryFormData()
+            ));
+        }
+        return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "code" , 500,
+                "message", "폼 데이터 로드 실패"
         ));
+
     }
 
     @PostMapping(value = "/donationLetters", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -136,7 +153,10 @@ public class DonationController {
     public ResponseEntity<?> modifyStory(@PathVariable("storySeq") Long storySeq, @ModelAttribute @Valid DonationStoryModifyRequestDto requestDto) {
         try {
             donationService.modifyDonationStory(storySeq, requestDto);
-
+            System.out.println("areaCode = " + requestDto.getAreaCode());
+            System.out.println("storyTitle = " + requestDto.getStoryTitle());
+            System.out.println("captchaToken = " + requestDto.getCaptchaToken());
+            System.out.println("file = " + requestDto.getFile());
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "code", 201,
@@ -180,20 +200,20 @@ public class DonationController {
     기증 후 스토리 댓글 등록
      */
     @PostMapping("/donationLetters/{storySeq}/comments")
-    public ResponseEntity<?> createComment(@PathVariable("storySeq") Long storySeq, @RequestBody @Valid CommentCreateRequestDto requestDto) {
+    public ResponseEntity<?> createComment(@PathVariable("storySeq") Long storySeq, @RequestBody @Valid DonationCommentCreateRequestDto requestDto) {
         try {
             donationCommentService.createDonationStoryComment(storySeq, requestDto);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "code", 201,
+                    "code", 200,
                     "message", "편지 댓글이 성공적으로 등록되었습니다."
             ));
         } catch (IllegalArgumentException ie) {
             return ResponseEntity.status(400).body(Map.of(
                     "success", false,
                     "code", 400,
-                    "message", ie.getMessage()
+                    "message", "필수 입력값이 누락되었습니다."
             ));
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of(
@@ -220,20 +240,20 @@ public class DonationController {
             return ResponseEntity.status(400).body(Map.of(
                     "success", false,
                     "code", 400,
-                    "message", ie.getMessage()
+                    "message","필수 입력값이 누락되었습니다."
             ));
         }catch(Exception e){
             return ResponseEntity.status(500).body(Map.of(
                     "success",false,
                     "code", 500,
-                    "message", e.getMessage()
+                    "message", "서버 내부 오류가 발생했습니다."
             ));
         }
     }
     @DeleteMapping("/donationLetters/{storySeq}/comments/{commentSeq}")
     public ResponseEntity<?> deleteComment(@PathVariable("storySeq") Long storySeq,
                                            @PathVariable("commentSeq") Long commentSeq,
-                                           @RequestBody VerifyCommentPasswordDto commentPassword) {
+                                           @RequestBody VerifyCommentPasscodeDto commentPassword) {
         try {
             donationCommentService.deleteDonationComment(commentSeq, commentPassword);
             return ResponseEntity.ok(Map.of(

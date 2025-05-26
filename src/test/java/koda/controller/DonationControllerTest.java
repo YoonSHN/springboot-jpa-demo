@@ -48,7 +48,7 @@ public class DonationControllerTest {
         DonationStoryListDto dto1 = new DonationStoryListDto(1L, "제목1", "글쓴이1", 0, LocalDateTime.now());
         List<DonationStoryListDto> listDto = List.of(dto1);
 
-        given(donationService.findAllDonationStories()).willReturn(listDto); // 저 메서드가 호출된다면 listDto를 반환하도록 설정
+//        given(donationService.findAllDonationStories()).willReturn(listDto); // 저 메서드가 호출된다면 listDto를 반환하도록 설정
 
         mockMvc.perform(get("/donationLetters")
                 .contentType(MediaType.APPLICATION_JSON))
