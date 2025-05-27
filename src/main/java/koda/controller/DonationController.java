@@ -110,16 +110,31 @@ public class DonationController {
             ));
         }
     }
-    /*스토리 상세 조회*/
     @GetMapping("/donationLetters/{storySeq}")
     public ResponseEntity<?> getDonationStoryDetail(@PathVariable("storySeq") Long storySeq) {
-        DonationStoryDetailDto donationDetailStory = donationService.findDonationStory(storySeq);
+        try {
+            DonationStoryDetailDto donationDetailStory = donationService.findDonationStory(storySeq);
 
-        return ResponseEntity.ok(Map.of(
-                "status", "200",
-                "message", "detail 페이지 출력",
-                "data", donationDetailStory
-        ));
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "status", 200,
+                    "message", "detail 페이지 출력",
+                    "data", donationDetailStory
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "success", false,
+                    "status", 404,
+                    "message", "해당 스토리를 찾을 수 없습니다."
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "status", 500,
+                    "message", "서버 내부 오류가 발생했습니다.",
+                    "error", e.getMessage()
+            ));
+        }
     }
     /*스토리 수정인증*/
     @PostMapping("/donationLetters/{storySeq}/verifyPwd")

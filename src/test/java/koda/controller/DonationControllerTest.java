@@ -3,6 +3,7 @@ package koda.controller;
 
 import koda.dto.request.DonationStoryCreateRequestDto;
 import koda.dto.response.AreaCode;
+import koda.dto.response.DonationStoryDetailDto;
 import koda.dto.response.DonationStoryListDto;
 import koda.dto.response.DonationStoryWriteFormDto;
 import koda.service.DonationCommentService;
@@ -15,13 +16,16 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
+import static net.bytebuddy.implementation.FixedValue.value;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -56,7 +60,19 @@ public class DonationControllerTest {
 
         //when & then
         mockMvc.perform(get("/donationLetters").contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.message").value("기증 후 스토리 목록 가져오기 성공"))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].storySeq").value(1))
+                .andExpect(jsonPath("$.data[0].title").value("제목1"))
+                .andExpect(jsonPath("$.data[0].writer").value("글쓴이1"))
+                .andExpect(jsonPath("$.data[0].readCount").value(0))
+                .andExpect(jsonPath("$.pageInfo.totalPages").value(1))
+                .andExpect(jsonPath("$.pageInfo.currentPage").value(0))
+                .andExpect(jsonPath("$.pageInfo.isFirst").value(true))
+                .andExpect(jsonPath("$.pageInfo.hasNext").value(false));
     }
     @Test
     @DisplayName("스토리 전체 조회 - 실패")
@@ -144,12 +160,80 @@ public class DonationControllerTest {
                         .andExpect(jsonPath("$.success").value(false));
     }
     @Test
-    public void getDonationStoryDetail() {
+    @DisplayName("상세 페이지 조회 - 성공(스토리 있음)")
+    public void getDonationStoryDetail() throws Exception {
+        // given
+        Long storySeq = 1L;
+        DonationStoryDetailDto listDto = DonationStoryDetailDto.builder()
+                .storySeq(storySeq)
+                .title("제목1")
+                .storyWriter("작성자1")
+                .readCount(0)
+                .areaCode(AreaCode.AREA100)
+                .storyContent("cdscdockdcpa")
+                .fileName("343029490423890")
+                .orgFileName("dice1.jpg")
+                .build();
 
+        // service가 해당 값을 반환하도록 mock 설정
+        given(donationService.findDonationStory(storySeq)).willReturn(listDto);
+
+        // when & then
+        mockMvc.perform(get("/donationLetters/{storySeq}", storySeq)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("detail 페이지 출력"))
+                .andExpect(jsonPath("$.data.storySeq").value(1))
+                .andExpect(jsonPath("$.data.title").value("제목1"))
+                .andExpect(jsonPath("$.data.storyWriter").value("작성자1"))
+                .andExpect(jsonPath("$.data.readCount").value(0))
+                .andExpect(jsonPath("$.data.areaCode").value("AREA100"))
+                .andExpect(jsonPath("$.data.storyContent").value("cdscdockdcpa"))
+                .andExpect(jsonPath("$.data.fileName").value("343029490423890"))
+                .andExpect(jsonPath("$.data.orgFileName").value("dice1.jpg"));
     }
-
     @Test
-    public void verifyStoryPassword() {
+    @DisplayName("상세 페이지 조회 - 실패(스토리 없음 - 400 에러)")
+    public void getDonationStoryDetail_fail_notFound() throws Exception {
+        // given
+        Long storySeq = 999L;
+
+        // service가 예외 던지도록 설정
+        given(donationService.findDonationStory(storySeq))
+                .willThrow(new IllegalArgumentException("NOT_FOUND"));
+
+        // when & then
+        mockMvc.perform(get("/donationLetters/{storySeq}", storySeq)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound()) // 404 응답 검증
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("해당 스토리를 찾을 수 없습니다."));
+    }
+    @Test
+    @DisplayName("상세 페이지 조회 - 실패 (서버 내부 오류 - 500 에러)")
+    public void getDonationStoryDetail_fail_internalServerError() throws Exception {
+        // given
+        Long storySeq = 999L;
+
+        // 서비스에서 예기치 않은 예외 발생
+        given(donationService.findDonationStory(storySeq))
+                .willThrow(new RuntimeException("DB 연결 실패"));
+
+        // when & then
+        mockMvc.perform(get("/donationLetters/{storySeq}", storySeq)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.message").value("서버 내부 오류가 발생했습니다."))
+                .andExpect(jsonPath("$.error").value("DB 연결 실패"));
+    }
+    @Test
+    public void verifyStoryPassword(){
+
     }
 
     @Test
