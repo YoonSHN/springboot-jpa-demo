@@ -36,15 +36,16 @@ public class DonationCommentService {
         if (false) {
             throw new IllegalArgumentException("캡차 인증 실패");
         }
+        if(!validatePassword(requestDto.getCommentPasscode())){
+            throw new IllegalArgumentException("패스워드가 형식에 맞지 않습니다.");
+        }
 
         DonationStoryComment comment = DonationStoryComment.builder()
                 .commentWriter(requestDto.getCommentWriter())
                 .commentPasscode(requestDto.getCommentPasscode())
                 .contents(requestDto.getContents())
-                .writeTime(LocalDateTime.now())
                 .writerId(null)
                 .modifyTime(null)
-                .delFlag("N")
                 .build();
 
         story.addComment(comment); //연관관계 편의 메서드로 양방향 관계 설정
@@ -64,6 +65,13 @@ public class DonationCommentService {
         if (false) {
             throw new IllegalArgumentException("캡차 인증 실패");
         }
+        if(!validatePassword(requestDto.getCommentPasscode())){
+            throw new IllegalArgumentException("패스워드가 형식에 맞지 않습니다.");
+        }
+        if(!storyComment.getCommentPasscode().equals(requestDto.getCommentPasscode())){
+            throw new IllegalArgumentException("패스워드가 일치하지 않습니다.");
+        }
+
 
         storyComment.modifyDonationStoryComment(requestDto);
     }
@@ -76,10 +84,22 @@ public class DonationCommentService {
         if(!commentDto.getCommentPasscode().equals(storyComment.getCommentPasscode())){
             throw new IllegalArgumentException("패스워드가 틀립니다.");
         }
+        DonationStory story = storyComment.getStory();
+        if (story != null) {
+            story.removeComment(storyComment);
+        }
+
         commentRepository.delete(storyComment);
+
     }
 
 
-
+    //비밀번호 검증 (영 + 숫자 + 8자 ~ 16자 코드) - story, comment 모두 처리
+    public boolean validatePassword(String password){
+        if(password.matches("^[a-zA-Z0-9]{8,16}$")){
+            return true;
+        }
+        return false;
+    }
 
 }

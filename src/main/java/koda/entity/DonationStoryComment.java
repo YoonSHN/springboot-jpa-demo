@@ -8,6 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -57,5 +58,15 @@ public class DonationStoryComment {
         this.commentWriter = requestDto.getCommentWriter();
         this.contents = requestDto.getCommentContents();
     }
+    @PrePersist
+    protected void onCreate() {
+        if (this.writeTime == null) {
+            this.writeTime = LocalDateTime.now();
+        }
+        if (this.delFlag == null) {
+            this.delFlag = "N";
+        }
+    }
+
 
 }

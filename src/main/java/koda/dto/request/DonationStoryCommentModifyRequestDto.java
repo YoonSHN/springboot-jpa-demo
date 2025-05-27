@@ -19,6 +19,8 @@ public class DonationStoryCommentModifyRequestDto {
     @NotBlank
     private String commentContents;
     @NotBlank
+    private String commentPasscode;
+    @NotBlank
     private String captchaToken;
 
 }

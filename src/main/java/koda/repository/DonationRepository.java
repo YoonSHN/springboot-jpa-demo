@@ -30,5 +30,5 @@ public interface DonationRepository extends JpaRepository<DonationStory, Long> {
             WHERE s.storySeq =:storySeq
             """
     )
-    Optional<DonationStory> findWithCommentsById(Long storySeq);
+    Optional<DonationStory> findWithCommentsById(Long storySeq);  //상세 조회용
 }

@@ -82,6 +82,10 @@ public class DonationStory {
         comments.add(comment); //
         comment.setStory(this);
     }
+    public void removeComment(DonationStoryComment comment){
+        comments.remove(comment);
+        comment.setStory(null);
+    }
     //조회수 증가
     public void increaseReadCount(){ //조회수 증가메서드
         this.readCount = (this.readCount == null) ? 1 : readCount + 1;
