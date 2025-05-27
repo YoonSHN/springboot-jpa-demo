@@ -56,11 +56,12 @@ public class DonationServiceTest {
         Pageable pageable = PageRequest.of(0, 20);
         Page<DonationStory> page = new PageImpl<>(donationStories, pageable, 2);
 
-        when(repository.findAll(pageable)).thenReturn(page);
+        when(repository.findAllDonationStories(pageable)).thenReturn(page);
 
         Page<DonationStoryListDto> list = service.findAllDonationStories(pageable);
 
         assertEquals(2, list.getContent().size());
+
     }
 
     @Test

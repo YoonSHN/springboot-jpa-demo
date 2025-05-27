@@ -65,7 +65,7 @@ public class DonationStory {
     @JsonIgnore
     private List<DonationStoryComment> comments = new ArrayList<>();
 
-    // private String donorName; 삭제
+    // private String donorName;
 
     @PrePersist
     protected void onCreate() {//엔티티가 처음 persist 되기 직전에 호출되는 메서드 (생성일자 설정)

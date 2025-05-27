@@ -33,7 +33,7 @@ public class DonationService {
     기증 후 스토리 게시글 출력
      */
     @Transactional(readOnly = true)
-    public Page<DonationStoryListDto> findAllDonationStories(Pageable pageable) {
+    public Page<DonationStoryListDto>   findAllDonationStories(Pageable pageable) {
         return donationRepository.findAllDonationStories(pageable) //엔티티 -> DTO로 변환
                 .map(DonationStoryListDto::fromEntity);
     }

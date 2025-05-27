@@ -1,7 +1,8 @@
 package koda.controller;
 
 
-import koda.dto.request.DonationStoryCreateRequestDto;
+import koda.KodaApplication;
+import koda.dto.request.*;
 import koda.dto.response.AreaCode;
 import koda.dto.response.DonationStoryDetailDto;
 import koda.dto.response.DonationStoryListDto;
@@ -12,12 +13,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,6 +31,7 @@ import java.util.Map;
 import static net.bytebuddy.implementation.FixedValue.value;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -37,13 +41,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(DonationController.class)
+@ContextConfiguration(classes = KodaApplication.class)
 public class DonationControllerTest {
 
     @Autowired MockMvc mockMvc;
 
     @MockBean DonationService donationService;
     @MockBean
-    DonationCommentService commentService;
+    DonationCommentService donationCommentService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("스토리 전체 조회 - 성공")
@@ -66,8 +74,8 @@ public class DonationControllerTest {
                 .andExpect(jsonPath("$.message").value("기증 후 스토리 목록 가져오기 성공"))
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data[0].storySeq").value(1))
-                .andExpect(jsonPath("$.data[0].title").value("제목1"))
-                .andExpect(jsonPath("$.data[0].writer").value("글쓴이1"))
+                .andExpect(jsonPath("$.data[0].storyTitle").value("제목1"))
+                .andExpect(jsonPath("$.data[0].storyWriter").value("글쓴이1"))
                 .andExpect(jsonPath("$.data[0].readCount").value(0))
                 .andExpect(jsonPath("$.pageInfo.totalPages").value(1))
                 .andExpect(jsonPath("$.pageInfo.currentPage").value(0))
@@ -79,14 +87,15 @@ public class DonationControllerTest {
     public void getAllDonationList_failure() throws Exception{
         DonationStoryListDto dto1 = new DonationStoryListDto(1L, "제목1", "글쓴이1", 0, LocalDateTime.now());
         List<DonationStoryListDto> listDto = List.of(dto1);
-//        given(donationService.findAllDonationStories()).willThrow(new RuntimeException(""));
+        Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "storySeq"));
+
+        given(donationService.findAllDonationStories(pageable)).willThrow(new RuntimeException("기증 스토리 조회 실패"));
 
         mockMvc.perform(get("/donationLetters")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.message").value("기증 후 스토리 목록 가져오기 실패"))
-                .andExpect(jsonPath("$.error").value(""));
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.message").value("기증 후 스토리 목록 가져오기 실패"));
 
         System.out.println("donationSerivce = " + donationService);
     }
@@ -232,27 +241,251 @@ public class DonationControllerTest {
                 .andExpect(jsonPath("$.error").value("DB 연결 실패"));
     }
     @Test
-    public void verifyStoryPassword(){
+    @DisplayName("스토리 비밀번호 검증 - 성공")
+    public void verifyStoryPassword_success() throws Exception {
+        Long storySeq = 1L;
+        VerifyStoryPasscodeDto dto = new VerifyStoryPasscodeDto("correctPwd");
 
+        doNothing().when(donationService).verifyPasswordWithPassword(eq(storySeq), any(VerifyStoryPasscodeDto.class));
+
+        mockMvc.perform(post("/donationLetters/{storySeq}/verifyPwd", storySeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.result").value(1))
+            .andExpect(jsonPath("$.message").value("비밀번호가 일치합니다."));
     }
 
     @Test
-    public void modifyStory() {
+    @DisplayName("스토리 비밀번호 검증 - 실패 (NOT_FOUND)")
+    public void verifyStoryPassword_fail_notFound() throws Exception {
+        Long storySeq = 999L;
+        VerifyStoryPasscodeDto dto = new VerifyStoryPasscodeDto("anyPwd");
+
+        doThrow(new IllegalArgumentException("NOT_FOUND"))
+            .when(donationService).verifyPasswordWithPassword(eq(storySeq), any(VerifyStoryPasscodeDto.class));
+
+        mockMvc.perform(post("/donationLetters/{storySeq}/verifyPwd", storySeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.result").value(0))
+            .andExpect(jsonPath("$.message").value("해당 게시글이 존재하지 않습니다."));
     }
 
     @Test
-    public void deleteStory() {
+    @DisplayName("스토리 비밀번호 검증 - 실패 (MISMATCH_PWD)")
+    public void verifyStoryPassword_fail_mismatch() throws Exception {
+        Long storySeq = 1L;
+        VerifyStoryPasscodeDto dto = new VerifyStoryPasscodeDto("wrongPwd");
+
+        doThrow(new IllegalArgumentException("MISMATCH_PWD"))
+            .when(donationService).verifyPasswordWithPassword(eq(storySeq), any(VerifyStoryPasscodeDto.class));
+
+        mockMvc.perform(post("/donationLetters/{storySeq}/verifyPwd", storySeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.result").value(0))
+            .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다."));
     }
 
     @Test
-    public void createComment() {
+    @DisplayName("스토리 수정 - 성공")
+    public void modifyStory_success() throws Exception {
+        Long storySeq = 1L;
+        MockMultipartFile file = new MockMultipartFile("file", "edit.png", "image/png", "bytes".getBytes());
+        DonationStoryModifyRequestDto req = DonationStoryModifyRequestDto.builder()
+                .areaCode(AreaCode.AREA100)
+                .storyTitle("제목1")
+                .storyWriter("작성자1")
+                .storyContents("ㅇㅂ재ㅏㅇ베재")
+                .file(file)
+                .captchaToken("qwdkqopdq").build();
+
+        doNothing().when(donationService).modifyDonationStory(eq(storySeq), any(DonationStoryModifyRequestDto.class));
+
+        mockMvc.perform(multipart("/donationLetters/{storySeq}", storySeq)
+                .file(file)
+                .with(request -> { request.setMethod("PATCH"); return request; })
+                .param("areaCode", req.getAreaCode().name())
+                .param("storyTitle", req.getStoryTitle())
+                .param("captchaToken", req.getCaptchaToken())
+                .param("storyWriter", req.getStoryWriter())
+                .param("storyContents", req.getStoryContents())
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.code").value(201))
+            .andExpect(jsonPath("$.message").value("스토리가 성공적으로 수정되었습니다."));
     }
 
     @Test
-    public void modifyComment() {
+    @DisplayName("스토리 수정 - 실패")
+    public void modifyStory_failure() throws Exception {
+        Long storySeq = 1L;
+        MockMultipartFile file = new MockMultipartFile("file", "edit.png", "image/png", "bytes".getBytes());
+        DonationStoryModifyRequestDto req = DonationStoryModifyRequestDto.builder()
+                        .areaCode(AreaCode.AREA100)
+                        .storyTitle("제목1")
+                        .storyWriter("작성자1")
+                        .storyContents("ㅇㅂ재ㅏㅇ베재")
+                        .file(file)
+                        .captchaToken("qwdkqopdq").build();
+
+        doThrow(new IllegalArgumentException("error"))
+            .when(donationService).modifyDonationStory(eq(storySeq), any(DonationStoryModifyRequestDto.class));
+
+        mockMvc.perform(multipart("/donationLetters/{storySeq}", storySeq)
+                .file(file)
+                .with(request -> { request.setMethod("PATCH"); return request; })
+                .param("areaCode", req.getAreaCode().name())
+                .param("storyTitle", req.getStoryTitle())
+                .param("captchaToken", req.getCaptchaToken())
+                        .param("storyWriter",req.getStoryWriter())
+                        .param("storyContents", req.getStoryContents())
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value(400))
+            .andExpect(jsonPath("$.message").value("필수 입력값이 누락되었습니다."));
     }
 
     @Test
-    public void deleteComment() {
+    @DisplayName("스토리 삭제 - 성공")
+    public void deleteStory_success() throws Exception {
+        Long storySeq = 1L;
+        VerifyStoryPasscodeDto dto = new VerifyStoryPasscodeDto("pwd");
+
+        doNothing().when(donationService).deleteDonationStory(eq(storySeq), any(VerifyStoryPasscodeDto.class));
+
+        mockMvc.perform(delete("/donationLetters/{storySeq}", storySeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.result").value(1))
+            .andExpect(jsonPath("$.message").value("스토리가 정상적으로 삭제 되었습니다."));
+    }
+
+    @Test
+    @DisplayName("스토리 삭제 - 실패")
+    public void deleteStory_failure() throws Exception {
+        Long storySeq = 1L;
+        VerifyStoryPasscodeDto dto = new VerifyStoryPasscodeDto("wrong");
+
+        doThrow(new RuntimeException("pwd mismatch"))
+            .when(donationService).deleteDonationStory(eq(storySeq), any(VerifyStoryPasscodeDto.class));
+
+        mockMvc.perform(delete("/donationLetters/{storySeq}", storySeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.result").value(0))
+            .andExpect(jsonPath("$.message").value("비밀번호가 일치하지 않습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 등록 - 성공")
+    public void createComment_success() throws Exception {
+        Long storySeq = 1L;
+        DonationCommentCreateRequestDto dto = new DonationCommentCreateRequestDto("writer","pwd","contents","token");
+
+        doNothing().when(donationCommentService).createDonationStoryComment(eq(storySeq), any(DonationCommentCreateRequestDto.class));
+
+        mockMvc.perform(post("/donationLetters/{storySeq}/comments", storySeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.code").value(200))
+            .andExpect(jsonPath("$.message").value("편지 댓글이 성공적으로 등록되었습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 등록 - 실패")
+    public void createComment_failure() throws Exception {
+        Long storySeq = 1L;
+        DonationCommentCreateRequestDto dto = new DonationCommentCreateRequestDto("writer","pwd","contents","token");
+
+        doThrow(new IllegalArgumentException("error"))
+            .when(donationCommentService).createDonationStoryComment(eq(storySeq), any(DonationCommentCreateRequestDto.class));
+
+        mockMvc.perform(post("/donationLetters/{storySeq}/comments", storySeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value(400))
+            .andExpect(jsonPath("$.message").value("필수 입력값이 누락되었습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - 성공")
+    public void modifyComment_success() throws Exception {
+        Long storySeq = 1L, commentSeq = 2L;
+        DonationStoryCommentModifyRequestDto dto = new DonationStoryCommentModifyRequestDto("writer","newContents","pwd","token");
+
+        doNothing().when(donationCommentService).modifyDonationComment(eq(commentSeq), any(DonationStoryCommentModifyRequestDto.class));
+
+        mockMvc.perform(patch("/donationLetters/{storySeq}/comments/{commentSeq}", storySeq, commentSeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.code").value(201))
+            .andExpect(jsonPath("$.message").value("스토리 댓글이 성공적으로 수정되었습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - 실패")
+    public void modifyComment_failure() throws Exception {
+        Long storySeq = 1L, commentSeq = 2L;
+        DonationStoryCommentModifyRequestDto dto = new DonationStoryCommentModifyRequestDto("writer","newContents","pwd","token");
+
+        doThrow(new IllegalArgumentException("error"))
+            .when(donationCommentService).modifyDonationComment(eq(commentSeq), any(DonationStoryCommentModifyRequestDto.class));
+
+        mockMvc.perform(patch("/donationLetters/{storySeq}/comments/{commentSeq}", storySeq, commentSeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value(400))
+            .andExpect(jsonPath("$.message").value("필수 입력값이 누락되었습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 - 성공")
+    public void deleteComment_success() throws Exception {
+        Long storySeq = 1L, commentSeq = 2L;
+        VerifyCommentPasscodeDto dto = new VerifyCommentPasscodeDto("pwd");
+
+        doNothing().when(donationCommentService).deleteDonationComment(eq(commentSeq), any(VerifyCommentPasscodeDto.class));
+
+        mockMvc.perform(delete("/donationLetters/{storySeq}/comments/{commentSeq}", storySeq, commentSeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.code").value(201))
+            .andExpect(jsonPath("$.message").value("스토리 댓글이 성공적으로 삭제되었습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 삭제 - 실패")
+    public void deleteComment_failure() throws Exception {
+        Long storySeq = 1L, commentSeq = 2L;
+        VerifyCommentPasscodeDto dto = new VerifyCommentPasscodeDto("pwd");
+
+        doThrow(new IllegalArgumentException("error"))
+            .when(donationCommentService).deleteDonationComment(eq(commentSeq), any(VerifyCommentPasscodeDto.class));
+
+        mockMvc.perform(delete("/donationLetters/{storySeq}/comments/{commentSeq}", storySeq, commentSeq)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value(400))
+            .andExpect(jsonPath("$.message").value("error"));
     }
 }

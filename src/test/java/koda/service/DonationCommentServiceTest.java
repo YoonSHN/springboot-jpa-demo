@@ -1,6 +1,5 @@
 package koda.service;
 
-import jakarta.validation.constraints.NotBlank;
 import koda.dto.request.DonationCommentCreateRequestDto;
 import koda.dto.request.DonationStoryCommentModifyRequestDto;
 import koda.dto.request.VerifyCommentPasscodeDto;
@@ -10,20 +9,17 @@ import koda.entity.DonationStoryComment;
 import koda.repository.DonationCommentRepository;
 import koda.repository.DonationRepository;
 import org.junit.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.awaitility.Awaitility.given;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -103,7 +99,6 @@ public class DonationCommentServiceTest {
                 .commentPasscode("eotrmfqlalf")
                 .captchaToken("wqdokqwpdqwd").build();
 
-        when(donationRepository.findById(storySeq)).thenReturn(Optional.of(story));
         when(commentRepository.findById(commentSeq)).thenReturn(Optional.of(comment));
         service.modifyDonationComment(commentSeq,requestDto);
 
@@ -133,11 +128,11 @@ public class DonationCommentServiceTest {
                 .storyContents("내용입니다")
                 .fileName("abc123.jpg")
                 .orgFileName("원본.jpg")
-                .comments(new ArrayList<>(List.of(comment)))
+                .comments(new ArrayList<>())
                 .build();
+
         story.addComment(comment);
         VerifyCommentPasscodeDto passcodeDto = VerifyCommentPasscodeDto.builder().commentPasscode("eotrmfqlalf").build();
-        when(donationRepository.findById(storySeq)).thenReturn(Optional.of(story));
         when(commentRepository.findById(commentSeq)).thenReturn(Optional.of(comment));
 
         service.deleteDonationComment(commentSeq, passcodeDto);

@@ -168,10 +168,7 @@ public class DonationController {
     public ResponseEntity<?> modifyStory(@PathVariable("storySeq") Long storySeq, @ModelAttribute @Valid DonationStoryModifyRequestDto requestDto) {
         try {
             donationService.modifyDonationStory(storySeq, requestDto);
-            System.out.println("areaCode = " + requestDto.getAreaCode());
-            System.out.println("storyTitle = " + requestDto.getStoryTitle());
-            System.out.println("captchaToken = " + requestDto.getCaptchaToken());
-            System.out.println("file = " + requestDto.getFile());
+
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "code", 201,

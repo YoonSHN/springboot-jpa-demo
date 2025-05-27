@@ -16,7 +16,7 @@ public interface DonationRepository extends JpaRepository<DonationStory, Long> {
 
     @Query(
             """
-            SELECT new koda.dto.response.DonationStoryListDto(u.storySeq, u.storyTitle, u.storyWriter, u.readCount, u.writeTime) 
+            SELECT new koda.dto.response.DonationStoryListDto(u.storySeq, u.storyTitle, u.storyWriter, u.readCount, u.writeTime)
             FROM DonationStory u ORDER BY u.storySeq DESC
             """
     )
