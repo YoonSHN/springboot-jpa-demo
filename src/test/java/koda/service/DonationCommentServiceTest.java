@@ -136,8 +136,9 @@ public class DonationCommentServiceTest {
         when(commentRepository.findById(commentSeq)).thenReturn(Optional.of(comment));
 
         service.deleteDonationComment(commentSeq, passcodeDto);
-
+        assertNull(comment.getStory());
         assertEquals(0, story.getComments().size());
+
 
         ArgumentCaptor<DonationStoryComment> captor = ArgumentCaptor.forClass(DonationStoryComment.class);
         verify(commentRepository).delete(captor.capture());

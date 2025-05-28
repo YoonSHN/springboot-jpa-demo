@@ -11,6 +11,7 @@ import koda.entity.DonationStory;
 import koda.repository.DonationRepository;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.runner.RunWith;
 import org.mockito.*;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -155,6 +156,7 @@ public class DonationServiceTest {
     }
 
     @Test
+    @DisplayName("댓글 삭제")
     public void deleteDonationStory() {
         Long storySeq = 1L;
         DonationStory story = DonationStory.builder()

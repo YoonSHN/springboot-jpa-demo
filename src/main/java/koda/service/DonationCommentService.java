@@ -72,7 +72,6 @@ public class DonationCommentService {
             throw new IllegalArgumentException("패스워드가 일치하지 않습니다.");
         }
 
-
         storyComment.modifyDonationStoryComment(requestDto);
     }
 
